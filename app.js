@@ -1,3 +1,51 @@
+const storageCtrl = (()=>{
+  return {
+    storeItem:function(item){
+      let items ;
+      if(localStorage.getItem('items') === null ){
+        items = []
+        items.push(item)
+      } else {
+        items = JSON.parse(localStorage.getItem('items'))
+        items.push(item)
+      }
+      localStorage.setItem('items',JSON.stringify(items))
+    },
+    getItem:function(){
+      let items;
+      if(localStorage.getItem('items') === null ){
+        items = []
+      } else {
+        items = JSON.parse(localStorage.getItem('items'))
+      }
+      return items;
+    },
+    updateItemStorage: function(updateItem){
+      let items = JSON.parse(localStorage.getItem('items'))
+      items.forEach((item,index)=>{
+        if(item.id === updateItem.id) {
+          items.splice(index,1,updateItem);
+        }
+      })
+      localStorage.setItem('items',JSON.stringify(items))
+    },
+    deleteFromLocalStorage: function(deleteItem){
+      let items = JSON.parse(localStorage.getItem('items'))
+      items.forEach((item,index)=>{
+        if(item.id === deleteItem.id) {
+          items.splice(index,1);
+        }
+      })
+      localStorage.setItem('items',JSON.stringify(items))
+    },
+    clearAllFromStorage: function(){
+      localStorage.removeItem('items');
+    }
+    
+  }
+})()
+
+
 
 const ItemCtrl =(()=>{
   const Item = function(id, name, cal){
@@ -7,11 +55,7 @@ const ItemCtrl =(()=>{
   }
 
   const data ={
-    items :[
-      // {id:0,name:'Steak Dinner',cal:1200},
-      // {id:1,name:'Cookie',cal:400},
-      // {id:2,name:'Paneer',cal:300}
-    ],
+    items :storageCtrl.getItem(),
     currentItem: null,
     totalCalories: 0
   }
@@ -183,7 +227,7 @@ const UICtrl=(()=>{
  }
 })()
 
-const App =((ItemCtrl,UICtrl)=>{
+const App =((ItemCtrl,UICtrl,storageCtrl)=>{
 
   const loadEventListners = function(){
     const UISelector = UICtrl.getSelectors();
@@ -219,7 +263,7 @@ const App =((ItemCtrl,UICtrl)=>{
       
        const totalCal = ItemCtrl.getTotalCal()
        UICtrl.showTotalCal(totalCal);
-
+       storageCtrl.storeItem(newItem)
        UICtrl.clearInput()
     }
   }
@@ -231,6 +275,7 @@ const App =((ItemCtrl,UICtrl)=>{
     UICtrl.updateListItem(updateItem)
     const totalCal = ItemCtrl.getTotalCal()
     UICtrl.showTotalCal(totalCal);
+    storageCtrl.updateItemStorage(updateItem)
     UICtrl.clearEdit()
   }
 
@@ -239,7 +284,7 @@ const App =((ItemCtrl,UICtrl)=>{
     if(e.target.classList.contains('edit-item')){
       const listId = e.target.parentNode.parentNode.id
       const listIdArray = listId.split('-');
-      const id= parseInt(listIdArray[1])
+      const id= parseInt(listIdArray[1])  
       const itemToEdit = ItemCtrl.getItemById(id)
       ItemCtrl.setCurrentItem(itemToEdit)
       UICtrl.addItemToForm();
@@ -253,10 +298,12 @@ const App =((ItemCtrl,UICtrl)=>{
     UICtrl.deleteListItem(currentItem.id)
     const totalCal = ItemCtrl.getTotalCal()
     UICtrl.showTotalCal(totalCal);
+    storageCtrl.deleteFromLocalStorage(currentItem)
     UICtrl.clearEdit()
   }
 
   const clearAllItems = function(){
+    storageCtrl.clearAllFromStorage()
     ItemCtrl.clearAll()
     UICtrl.removeItems()
     const totalCal = ItemCtrl.getTotalCal()
@@ -280,6 +327,6 @@ const App =((ItemCtrl,UICtrl)=>{
       loadEventListners()
     }
   }
-})(ItemCtrl,UICtrl)
+})(ItemCtrl,UICtrl,storageCtrl)
 
 App.init()
